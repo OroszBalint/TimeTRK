@@ -2,6 +2,10 @@
 
 Simple timetracking cli with polibar support and pandoc export.
 
+## Dependencies
+
+- dmenu
+
 ## Install
 
 ``` bash

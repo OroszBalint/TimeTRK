@@ -7,6 +7,11 @@ pwd)
 file=$currentDir/logs/$(date "+%Y-%m")
 log=$(date "+%u %d %H:%M:%S")
 
+if [ ! -d $currentDir/logs ]
+then
+	mkdir $currentDir/logs
+fi
+
 convertsecs() {
  ((h=${1}/3600))
  ((m=(${1}%3600)/60))

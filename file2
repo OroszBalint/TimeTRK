@@ -1,6 +1,0 @@
-#! /bin/bash
-
-i=7
-sum=2
-sum=$(($sum + $i))
-echo $sum

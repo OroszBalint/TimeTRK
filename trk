@@ -94,17 +94,31 @@ fi
 # trk reporting 
 if [ "$1" == "report" ]
 then
-	file=$(ls $currentDir/logs | dmenu)
+	selectFile=$currentDir/logs/$(ls $currentDir/logs | dmenu)
 	sum=0
-while read p; do
-	if [ "$(echo $p | awk '{print $4}')" == "stop" ] && [ ! -z "$(echo $p | awk '{print $5}')" ]
-	then
-		time=$(echo "$p" | awk '{$1=$2=$3=$4=""; $0=$0} NF=NF')
-		timeInSec=$(($(date -d"$time" +%s) - $(date -d"00:00:00" +%s) ))
-		sum=$(($sum + $timeInSec))
-		echo $time
-	fi
-done <$currentDir/logs/$file
-echo ----------
-echo $(convertsecs $sum)
+
+	var=$(
+		while read p; do
+			echo "$p" | awk '{print $2}'
+		done <$selectFile | uniq
+	)
+
+	while read p; do
+		dailyTime=0
+		while read i; do
+			if [ "$(echo $i | awk '{print $2}')" == "$p" ] && [ "$(echo $i | awk '{print $4}')" == "stop" ]
+			then
+				time=$(echo "$i" | awk '{print $5}')
+				dayOfTheWeek=$(echo "$i" | awk '{print $1}')
+				day=$(echo "$i" | awk '{print $2}')
+				timeInSec=$(($(date -d"$time" +%s) - $(date -d"00:00:00" +%s) ))
+				sum=$(($sum + $timeInSec))
+				dailyTime=$(($dailyTime + $timeInSec))
+			fi
+		done <$selectFile
+		echo "$p":	$(convertsecs "$dailyTime")
+	done <<< "$var"
+
+	echo ================
+	echo Summary:	$(convertsecs $sum)
 fi

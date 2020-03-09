@@ -1,5 +1,6 @@
 #! /bin/bash
 
-var=0
-echo this > $var
-echo $var
+i=7
+sum=2
+sum=$(($sum + $i))
+echo $sum

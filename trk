@@ -23,7 +23,7 @@ while read p; do
 	then
 		echo "$p" | awk '{$1=$2=$3=$4=""; $0=$0} NF=NF'
 	fi
-done <$file | dmenu)
+done <$file | uniq | dmenu)
 	echo $log start $proj >> $file
 	echo "TimeTRK started."
 	exit 1
@@ -44,7 +44,7 @@ while read p; do
 	then
 		echo "$p" | awk '{$1=$2=$3=$4=""; $0=$0} NF=NF'
 	fi
-done <$file | dmenu)
+done <$file | uniq | dmenu)
 	echo $log start $proj >> $file
 	echo "TimeTRK started."
 	exit 1
@@ -100,10 +100,11 @@ while read p; do
 	if [ "$(echo $p | awk '{print $4}')" == "stop" ] && [ ! -z "$(echo $p | awk '{print $5}')" ]
 	then
 		time=$(echo "$p" | awk '{$1=$2=$3=$4=""; $0=$0} NF=NF')
-		timeInSec=$(date -d"$time" +%s)
+		timeInSec=$(($(date -d"$time" +%s) - $(date -d"00:00:00" +%s) ))
 		sum=$(($sum + $timeInSec))
 		echo $time
 	fi
 done <$currentDir/logs/$file
+echo ----------
 echo $(convertsecs $sum)
 fi

@@ -36,9 +36,10 @@ trk report
 type = custom/script
 exec = ~/path/to/TimeTRK/trk
 interval = 1
-format-font-foreground = ${colors.blue}
 click-left = ~/path/to/TimeTRK/trk +
 click-right = ~/path/to/TimeTRK/trk -
+
+# than add trk to modules
 ```
 
 ## TODO

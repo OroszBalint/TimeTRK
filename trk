@@ -1,19 +1,38 @@
 #! /bin/bash
 
 args=("$@")
-file=logs/$(date "+%Y-%m")
+currentDir=$( 
+cd $(dirname "$0") 
+pwd)
+file=$currentDir/logs/$(date "+%Y-%m")
 log=$(date "+%u %d %H:%M:%S")
+
+#!/bin/sh
+
+convertsecs() {
+ ((h=${1}/3600))
+ ((m=(${1}%3600)/60))
+ ((s=${1}%60))
+ printf "%02d:%02d:%02d\n" $h $m $s
+}
 
 if [ "$1" == "+" ] && [ ! -f "$file" ]
 then
-	echo $log start >> $file
+proj=$(
+while read p; do
+	if [ "$(echo $p | awk '{print $4}')" == "start" ] && [ ! -z "$(echo $p | awk '{print $5}')" ]
+	then
+		echo "$p" | awk '{$1=$2=$3=$4=""; $0=$0} NF=NF'
+	fi
+done <logs/2020-03 | dmenu)
+	echo $log start $proj >> $file
 	echo "TimeTRK started."
 	exit 1
 fi
 
 if [ -f "$file"  ]
 then
-	status=$(tail -n 1 logs/$(date "+%Y-%m") | awk '{print $4}')
+	status=$(tail -n 1 $file | awk '{print $4}')
 fi
 
 if [ "$1" == "+" ] && [ "$status" == "stop" ]
@@ -31,7 +50,12 @@ fi
 
 if [ "$1" == "-" ] && [ "$status" == "start" ]
 then
-	echo $log stop >> $file
+	startingTime=$(tail -n 1 $file | awk '{print $3}')
+	startingTimeInSec=$(($(echo $startingTime | cut -d':' -f1)*60*60 + $(echo $startingTime | cut -d':' -f2)*60 + $(echo $startingTime | cut -d':' -f3)))
+	now=$(date "+%H:%M:%S")
+	nowInSec=$(($(echo $now | cut -d':' -f1)*60*60 + $(echo $now | cut -d':' -f2)*60 + $(echo $now | cut -d':' -f3)))
+	elapsedTime=$(($nowInSec-$startingTimeInSec))
+	echo $log stop $(convertsecs $elapsedTime) >> $file
 	echo "TimeTRK stopped."
 	exit 1
 fi
@@ -40,4 +64,18 @@ if [ "$1" == "-" ] && [ "$status" == "stop" ]
 then
 	echo "No running tracker."
 	exit 1
+fi
+
+if [ "$1" == "" ] && [ "$status" == "start" ]
+then
+	startingTime=$(date -d"$(tail -n 1 $file | awk '{print $3}')" +%s)
+	now=$(date -d"$(date "+%H:%M:%S")" +%s)
+	elapsedTime=$(($now-$startingTime))
+	echo $(convertsecs $elapsedTime)
+	exit 1
+fi
+
+if [ "$1" == "" ] && [ "$status" == "stop" ]
+then
+	echo 00:00:00
 fi

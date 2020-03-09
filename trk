@@ -1,0 +1,43 @@
+#! /bin/bash
+
+args=("$@")
+file=logs/$(date "+%Y-%m")
+log=$(date "+%u %d %H:%M:%S")
+
+if [ "$1" == "+" ] && [ ! -f "$file" ]
+then
+	echo $log start >> $file
+	echo "TimeTRK started."
+	exit 1
+fi
+
+if [ -f "$file"  ]
+then
+	status=$(tail -n 1 logs/$(date "+%Y-%m") | awk '{print $4}')
+fi
+
+if [ "$1" == "+" ] && [ "$status" == "stop" ]
+then
+	echo $log start >> $file
+	echo "TimeTRK started."
+	exit 1
+fi
+
+if [ "$1" == "+" ] && [ "$status" == "start" ]
+then
+	echo "Already running."
+	exit 1
+fi
+
+if [ "$1" == "-" ] && [ "$status" == "start" ]
+then
+	echo $log stop >> $file
+	echo "TimeTRK stopped."
+	exit 1
+fi
+
+if [ "$1" == "-" ] && [ "$status" == "stop" ]
+then
+	echo "No running tracker."
+	exit 1
+fi

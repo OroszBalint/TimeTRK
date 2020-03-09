@@ -30,7 +30,7 @@ trk report
 
 ## Polybar
 
-``` toml
+``` config
 [module/trk]
 
 type = custom/script

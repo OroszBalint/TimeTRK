@@ -7,8 +7,6 @@ pwd)
 file=$currentDir/logs/$(date "+%Y-%m")
 log=$(date "+%u %d %H:%M:%S")
 
-#!/bin/sh
-
 convertsecs() {
  ((h=${1}/3600))
  ((m=(${1}%3600)/60))
@@ -16,6 +14,7 @@ convertsecs() {
  printf "%02d:%02d:%02d\n" $h $m $s
 }
 
+# if file don't exist create one
 if [ "$1" == "+" ] && [ ! -f "$file" ]
 then
 proj=$(
@@ -24,48 +23,59 @@ while read p; do
 	then
 		echo "$p" | awk '{$1=$2=$3=$4=""; $0=$0} NF=NF'
 	fi
-done <logs/2020-03 | dmenu)
+done <$file | dmenu)
 	echo $log start $proj >> $file
 	echo "TimeTRK started."
 	exit 1
 fi
 
+# get the last status if file exist
 if [ -f "$file"  ]
 then
 	status=$(tail -n 1 $file | awk '{print $4}')
 fi
 
+# trk start if last status is stop
 if [ "$1" == "+" ] && [ "$status" == "stop" ]
 then
-	echo $log start >> $file
+proj=$(
+while read p; do
+	if [ "$(echo $p | awk '{print $4}')" == "start" ] && [ ! -z "$(echo $p | awk '{print $5}')" ]
+	then
+		echo "$p" | awk '{$1=$2=$3=$4=""; $0=$0} NF=NF'
+	fi
+done <$file | dmenu)
+	echo $log start $proj >> $file
 	echo "TimeTRK started."
 	exit 1
 fi
 
+# trk start won't start if already running
 if [ "$1" == "+" ] && [ "$status" == "start" ]
 then
 	echo "Already running."
 	exit 1
 fi
 
+# trk stop if last status is start
 if [ "$1" == "-" ] && [ "$status" == "start" ]
 then
-	startingTime=$(tail -n 1 $file | awk '{print $3}')
-	startingTimeInSec=$(($(echo $startingTime | cut -d':' -f1)*60*60 + $(echo $startingTime | cut -d':' -f2)*60 + $(echo $startingTime | cut -d':' -f3)))
-	now=$(date "+%H:%M:%S")
-	nowInSec=$(($(echo $now | cut -d':' -f1)*60*60 + $(echo $now | cut -d':' -f2)*60 + $(echo $now | cut -d':' -f3)))
-	elapsedTime=$(($nowInSec-$startingTimeInSec))
+	startingTime=$(date -d"$(tail -n 1 $file | awk '{print $3}')" +%s)
+	now=$(date -d"$(date "+%H:%M:%S")" +%s)
+	elapsedTime=$(($now-$startingTime))
 	echo $log stop $(convertsecs $elapsedTime) >> $file
 	echo "TimeTRK stopped."
 	exit 1
 fi
 
+# trk stop won't stopl if nothing is running
 if [ "$1" == "-" ] && [ "$status" == "stop" ]
 then
 	echo "No running tracker."
 	exit 1
 fi
 
+# show the current tracking 
 if [ "$1" == "" ] && [ "$status" == "start" ]
 then
 	startingTime=$(date -d"$(tail -n 1 $file | awk '{print $3}')" +%s)
@@ -75,7 +85,25 @@ then
 	exit 1
 fi
 
+# if nothin is running show 00:00:00
 if [ "$1" == "" ] && [ "$status" == "stop" ]
 then
 	echo 00:00:00
+fi
+
+# trk reporting 
+if [ "$1" == "report" ]
+then
+	file=$(ls $currentDir/logs | dmenu)
+	sum=0
+while read p; do
+	if [ "$(echo $p | awk '{print $4}')" == "stop" ] && [ ! -z "$(echo $p | awk '{print $5}')" ]
+	then
+		time=$(echo "$p" | awk '{$1=$2=$3=$4=""; $0=$0} NF=NF')
+		timeInSec=$(date -d"$time" +%s)
+		sum=$(($sum + $timeInSec))
+		echo $time
+	fi
+done <$currentDir/logs/$file
+echo $(convertsecs $sum)
 fi
